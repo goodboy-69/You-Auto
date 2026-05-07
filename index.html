@@ -1,13 +1,159 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>My Google AI Studio App</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
-</html>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cup Story Premium — Cinematic Experience</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #090a0d;
+      --bg-soft: #11131a;
+      --surface: rgba(255,255,255,.05);
+      --text: #f5f2ea;
+      --muted: #b8b1a6;
+      --accent: #d8a86f;
+      --accent-2: #f0cfa3;
+      --line: rgba(255,255,255,.12);
+      --ease: cubic-bezier(.16,1,.3,1);
+      --radius: 22px;
+    }
+    * { box-sizing:border-box; }
+    html { scroll-behavior:smooth; }
+    body {
+      margin:0; font-family:Inter,system-ui,sans-serif; color:var(--text); background: radial-gradient(1200px 800px at 80% -20%, #2a1f1b 0%, var(--bg) 60%);
+      overflow-x:hidden; cursor:none;
+    }
+    .progress { position:fixed; top:0; left:0; height:2px; background:linear-gradient(90deg,var(--accent),var(--accent-2)); width:0; z-index:9999; }
+    .cursor { position:fixed; width:14px; height:14px; border:1px solid var(--accent-2); border-radius:50%; pointer-events:none; z-index:10000; transform:translate(-50%,-50%); mix-blend-mode:screen; }
+    .loader { position:fixed; inset:0; display:grid; place-items:center; background:#08090c; z-index:10001; transition:opacity .7s var(--ease), visibility .7s var(--ease); }
+    .loader.hidden { opacity:0; visibility:hidden; }
+    .loader-mark { font-family:"Playfair Display",serif; font-size:clamp(2rem,5vw,3.6rem); letter-spacing:.1em; position:relative; }
+    .loader-mark::after { content:""; position:absolute; left:0; bottom:-10px; width:100%; height:2px; background:var(--accent); transform-origin:left; animation:load 1.5s var(--ease) forwards; }
+    @keyframes load { from{transform:scaleX(0)} to{transform:scaleX(1)} }
 
+    nav { position:fixed; top:0; left:0; right:0; padding:1rem 4vw; display:flex; align-items:center; justify-content:space-between; z-index:1200; transition:background .4s ease, backdrop-filter .4s ease; }
+    nav.scrolled { background:rgba(9,10,13,.86); backdrop-filter:blur(10px); }
+    .brand { font-family:"Playfair Display",serif; letter-spacing:.06em; font-size:clamp(1.2rem,2vw,1.7rem); }
+    .links { display:flex; gap:2rem; }
+    .links a, .overlay a { color:var(--text); text-decoration:none; font-size:clamp(.9rem,1vw,1rem); }
+    .menu-btn { display:none; background:none; border:none; color:var(--text); font-size:1.2rem; }
+
+    .overlay { position:fixed; inset:0; background:rgba(7,8,11,.96); display:grid; place-content:center; gap:1.2rem; transform:translateY(-100%); transition:transform .7s var(--ease); z-index:1300; }
+    .overlay.open { transform:translateY(0); }
+    .overlay a { opacity:0; transform:translateY(22px); transition:.45s var(--ease); }
+    .overlay.open a { opacity:1; transform:translateY(0); }
+
+    section { padding:clamp(4rem,8vw,8rem) 6vw; position:relative; }
+    .hero { min-height:100vh; display:grid; align-items:end; padding-bottom:12vh; overflow:hidden; }
+    .hero-media { position:absolute; inset:0; z-index:-2; }
+    .hero-media video { position:absolute; width:100%; height:100%; object-fit:cover; transition:opacity 1.2s var(--ease); }
+    .hero-media::after { content:""; position:absolute; inset:0; background:linear-gradient(to top, rgba(9,10,13,.86), rgba(9,10,13,.35)); }
+    h1 { font-family:"Playfair Display",serif; font-size:clamp(2.2rem,7vw,6rem); line-height:1.03; max-width:12ch; margin:0 0 1rem; }
+    p.lead { max-width:52ch; color:var(--muted); font-size:clamp(1rem,1.4vw,1.2rem); }
+    .cta { margin-top:2rem; display:inline-block; padding:.9rem 1.4rem; border:1px solid var(--accent); border-radius:999px; color:var(--text); text-decoration:none; }
+
+    .reveal { opacity:0; transform:translateY(38px); transition:.8s var(--ease); }
+    .reveal.visible { opacity:1; transform:none; }
+
+    .stats { display:grid; grid-template-columns:repeat(4,1fr); gap:1rem; }
+    .stat { background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:1.4rem; }
+    .num { font-size:clamp(1.7rem,3vw,2.8rem); font-weight:600; }
+
+    .grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:1rem; perspective:800px; }
+    .card { background:linear-gradient(160deg, rgba(255,255,255,.07), rgba(255,255,255,.03)); border:1px solid var(--line); border-radius:var(--radius); padding:1.2rem; min-height:280px; transition:transform .3s var(--ease), border-color .4s var(--ease), opacity .6s var(--ease); transform-style:preserve-3d; opacity:0; transform:translateY(30px); }
+    .card.visible { opacity:1; transform:translateY(0); }
+    .card-media { height:160px; border-radius:16px; background:linear-gradient(130deg,#31241f,#7f5a37,#d9b180); margin-bottom:1rem; }
+
+    .carousel-wrap { overflow:hidden; cursor:grab; border-radius:var(--radius); }
+    .carousel { display:flex; gap:1rem; }
+    .carousel article { min-width:calc(33.333% - .75rem); background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:1rem; }
+
+    .marquee { border-top:1px solid var(--line); border-bottom:1px solid var(--line); white-space:nowrap; overflow:hidden; padding:.8rem 0; }
+    .marquee-track { display:inline-flex; gap:2rem; animation:marq 20s linear infinite; }
+    @keyframes marq { from{transform:translateX(0)} to{transform:translateX(-50%)} }
+
+    .bg-parallax { background:radial-gradient(500px 200px at 15% 20%, rgba(216,168,111,.18), transparent 60%), var(--bg-soft); }
+    form { display:grid; gap:.9rem; max-width:560px; }
+    input, textarea { padding:.9rem 1rem; background:#11141b; border:1px solid var(--line); color:var(--text); border-radius:12px; }
+    button { background:var(--accent); color:#1e160f; border:none; padding:.9rem 1rem; border-radius:999px; font-weight:600; }
+    .success { display:none; color:var(--accent-2); }
+
+    @media (max-width:1279px){ .grid{grid-template-columns:repeat(2,1fr)} .stats{grid-template-columns:repeat(2,1fr)} .carousel article{min-width:calc(50% - .5rem)} }
+    @media (max-width:767px){
+      body { cursor:auto; }
+      .cursor { display:none; }
+      .links{display:none;} .menu-btn{display:block;}
+      .grid,.stats{grid-template-columns:1fr;} .carousel article{min-width:88%;}
+    }
+  </style>
+</head>
+<body>
+  <div class="loader"><div class="loader-mark">CUP STORY</div></div>
+  <div class="progress" id="progress"></div>
+  <div class="cursor" id="cursor"></div>
+
+  <nav id="nav"><div class="brand">Cup Story Premium</div><div class="links"><a href="#story">Story</a><a href="#collections">Collections</a><a href="#experience">Experience</a><a href="#contact">Contact</a></div><button class="menu-btn" id="menuBtn">Menu</button></nav>
+  <div class="overlay" id="overlay"><a href="#story">Story</a><a href="#collections">Collections</a><a href="#experience">Experience</a><a href="#contact">Contact</a></div>
+
+  <section class="hero" id="top">
+    <div class="hero-media" id="heroMedia">
+      <video src="https://videos.pexels.com/video-files/853813/853813-hd_1920_1080_25fps.mp4" autoplay muted loop playsinline></video>
+      <video src="https://videos.pexels.com/video-files/3195394/3195394-hd_1920_1080_25fps.mp4" autoplay muted loop playsinline style="opacity:0"></video>
+    </div>
+    <div class="reveal"><h1>Luxury Dessert Moments, Served Cinematically.</h1><p class="lead">Cup Story Premium crafts indulgent layered desserts with artisan texture, visual drama, and unforgettable flavor—created for modern celebrations and upscale gifting.</p><a class="cta" href="#collections">Explore Signature Cups</a></div>
+  </section>
+
+  <section id="story" class="bg-parallax reveal"><div class="stats"><article class="stat"><div class="num" data-target="125000">0</div><small>Cups Served</small></article><article class="stat"><div class="num" data-target="37">0</div><small>Signature Flavors</small></article><article class="stat"><div class="num" data-target="5">0</div><small>Cities Delivered</small></article><article class="stat"><div class="num" data-target="98">0</div><small>% Satisfaction</small></article></div></section>
+
+  <section id="collections"><h2 class="reveal" style="font-size:clamp(1.6rem,3vw,3rem);font-family:'Playfair Display',serif;">Signature Collection</h2><div class="grid">
+    <article class="card reveal"><div class="card-media"></div><h3>Velvet Tiramisu</h3><p>Mascarpone mousse, espresso sponge, cacao veil.</p></article>
+    <article class="card reveal"><div class="card-media" style="background:linear-gradient(130deg,#2b1b1f,#7a3346,#f0a6b6)"></div><h3>Rose Pistachio</h3><p>Persian rose cream, pistachio praline, honey crumb.</p></article>
+    <article class="card reveal"><div class="card-media" style="background:linear-gradient(130deg,#1d1f25,#2f4f83,#9ecbff)"></div><h3>Midnight Blueberry</h3><p>Wild blueberry compote, vanilla chantilly, sable crunch.</p></article>
+  </div></section>
+
+  <section id="experience" class="reveal"><h2 style="font-size:clamp(1.6rem,3vw,3rem);font-family:'Playfair Display',serif;">Immersive Tasting Carousel</h2><div class="carousel-wrap" id="dragZone"><div class="carousel" id="carousel"><article><h3>Bridal Luxe Box</h3><p>Curated dessert cups in ivory-gold presentation.</p></article><article><h3>Corporate Prestige</h3><p>Branded premium cups for launches and events.</p></article><article><h3>Private Soirée Set</h3><p>Chef-selected flavor sequence with tasting notes.</p></article><article><h3>Festive Reserve</h3><p>Seasonal limited-edition textures and finishes.</p></article></div></div></section>
+
+  <section class="marquee" id="marquee"><div class="marquee-track"><span>✦ Handcrafted Daily</span><span>✦ Premium Ingredients</span><span>✦ Elegant Packaging</span><span>✦ Doorstep Delivery</span><span>✦ Handcrafted Daily</span><span>✦ Premium Ingredients</span><span>✦ Elegant Packaging</span><span>✦ Doorstep Delivery</span></div></section>
+
+  <section id="contact" class="bg-parallax reveal"><h2 style="font-size:clamp(1.6rem,3vw,3rem);font-family:'Playfair Display',serif;">Reserve Your Premium Experience</h2><form id="contactForm"><input required placeholder="Full Name"/><input required type="email" placeholder="Email Address"/><textarea rows="4" required placeholder="Tell us your occasion"></textarea><button type="submit">Request Curation</button><div class="success" id="successMsg">Thank you. Your premium consultation request was received.</div></form></section>
+
+  <footer style="padding:2rem 6vw;border-top:1px solid var(--line);color:var(--muted)">© 2026 Cup Story Premium — Designed for elevated indulgence.</footer>
+
+<script>
+const ease = t => t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;
+const nav=document.getElementById('nav'),progress=document.getElementById('progress');
+const observer=new IntersectionObserver((entries)=>entries.forEach(e=>{if(e.isIntersecting)e.target.classList.add('visible')}),{threshold:.12});
+document.querySelectorAll('.reveal').forEach((el,i)=>{el.style.transitionDelay=(i*80)+'ms';observer.observe(el)});
+
+function rafScroll(){const y=window.scrollY,max=document.documentElement.scrollHeight-window.innerHeight;progress.style.width=((y/max)*100||0)+'%';nav.classList.toggle('scrolled',y>28);
+  document.querySelectorAll('.hero-media,.bg-parallax').forEach((el,idx)=>{const factor=window.innerWidth<768?(idx?0.12:0.18):(idx?0.3:0.5);el.style.transform=`translateY(${y*factor}px)`;}); requestAnimationFrame(rafScroll)} requestAnimationFrame(rafScroll);
+
+const cursor=document.getElementById('cursor'); let cx=innerWidth/2,cy=innerHeight/2,tx=cx,ty=cy;
+window.addEventListener('mousemove',e=>{tx=e.clientX;ty=e.clientY}); (function animateCursor(){cx+=(tx-cx)*.16;cy+=(ty-cy)*.16;cursor.style.left=cx+'px';cursor.style.top=cy+'px';requestAnimationFrame(animateCursor)})();
+
+document.querySelectorAll('.card').forEach(card=>{card.addEventListener('mousemove',e=>{if(innerWidth<768)return;const r=card.getBoundingClientRect();const x=(e.clientX-r.left)/r.width-.5,y=(e.clientY-r.top)/r.height-.5;card.style.transform=`perspective(800px) rotateY(${x*12}deg) rotateX(${y*-12}deg)`});card.addEventListener('mouseleave',()=>card.style.transform='perspective(800px) rotateY(0deg) rotateX(0deg)')});
+
+let active=0;const vids=[...document.querySelectorAll('.hero-media video')]; if(vids.length>1){setInterval(()=>{vids[active].style.opacity=0;active=(active+1)%vids.length;vids[active].style.opacity=1;},8000)}
+
+const nums=[...document.querySelectorAll('.num')]; const countObs=new IntersectionObserver(es=>es.forEach(e=>{if(!e.isIntersecting)return;const el=e.target,target=+el.dataset.target;let start=null;const dur=1300;function tick(ts){if(!start)start=ts;const p=Math.min((ts-start)/dur,1);el.textContent=Math.floor(target*ease(p));if(p<1)requestAnimationFrame(tick)}requestAnimationFrame(tick);countObs.unobserve(el)}),{threshold:.3});nums.forEach(n=>countObs.observe(n));
+
+const zone=document.getElementById('dragZone'); let down=false,startX=0,scrollL=0;
+function dragStart(x){down=true;startX=x-zone.offsetLeft;scrollL=zone.scrollLeft;zone.style.cursor='grabbing'}
+function dragMove(x){if(!down)return;zone.scrollLeft=scrollL-(x-zone.offsetLeft-startX)*1.4}
+zone.addEventListener('mousedown',e=>dragStart(e.pageX)); window.addEventListener('mouseup',()=>{down=false;zone.style.cursor='grab'}); zone.addEventListener('mousemove',e=>{e.preventDefault();dragMove(e.pageX)});
+zone.addEventListener('touchstart',e=>dragStart(e.touches[0].pageX),{passive:true}); zone.addEventListener('touchmove',e=>dragMove(e.touches[0].pageX),{passive:true});
+
+const marquee=document.getElementById('marquee').querySelector('.marquee-track'); document.getElementById('marquee').addEventListener('mouseenter',()=>marquee.style.animationPlayState='paused');document.getElementById('marquee').addEventListener('mouseleave',()=>marquee.style.animationPlayState='running');
+
+const menuBtn=document.getElementById('menuBtn'),overlay=document.getElementById('overlay');menuBtn.addEventListener('click',()=>overlay.classList.toggle('open'));overlay.querySelectorAll('a').forEach((a,i)=>{a.style.transitionDelay=(i*90)+'ms';a.addEventListener('click',()=>overlay.classList.remove('open'))});
+
+const form=document.getElementById('contactForm');form.addEventListener('submit',e=>{e.preventDefault();document.getElementById('successMsg').style.display='block';form.reset()});
+setTimeout(()=>document.querySelector('.loader').classList.add('hidden'),1500);
+
+window.addEventListener('wheel',e=>{if(Math.abs(e.deltaY)<1)return; e.preventDefault();const start=window.scrollY;const target=start+e.deltaY*0.9;const duration=500;let t0=null;function step(t){if(!t0)t0=t;const p=Math.min((t-t0)/duration,1);window.scrollTo(0,start+(target-start)*ease(p));if(p<1)requestAnimationFrame(step)}requestAnimationFrame(step)}, {passive:false});
+</script>
+</body>
+</html>
